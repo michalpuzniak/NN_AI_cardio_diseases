@@ -54,15 +54,15 @@ Y= dane2.iloc[:,-1] #samo 'cardio' jest '-1' bo cardio na ostatnim miejscu w df
 x_train, x_test, y_train, y_test = sk.model_selection.train_test_split(X, Y, test_size=1/6, random_state=123)
 
 # tworzę model i kompiluje
-def createModel(optimizer='rmsprop'):
+def createModel(optimizer='rmsprop', hidden_layers=1, activation = 'relu', output_activation='sigmoid'):
     model = Sequential()
-    model.add(Dense(128, input_dim=11, activation=tf.nn.relu, kernel_constraint=maxnorm(2)))
+    model.add(Dense(32, input_dim=11, activation=tf.nn.relu, kernel_constraint=maxnorm(2)))
 
-    model.add(Dense(32, activation=tf.nn.relu))
+    for i in range(hidden_layers):
+        # Add one hidden layer
+        model.add(Dense(8, activation=activation))
 
-    model.add(Dense(8, activation=tf.nn.relu))
-
-    model.add(Dense(1, activation=tf.nn.sigmoid))
+    model.add(Dense(1, activation=output_activation))
 
     model.compile(loss="binary_crossentropy", optimizer=optimizer, metrics=['accuracy'])
     return model
@@ -125,10 +125,16 @@ model1=KerasClassifier(build_fn=createModel, verbose=0)
 daneTemporalne= dane.sample(n=1000, random_state=1)
 x_train1=daneTemporalne.iloc[:,0:11]
 y_train1=daneTemporalne.iloc[:,-1]
-optimizers = ['adam', 'nadam','relu']
+
+
+optimizers = ['adam', 'nadam']
+activations = ['relu','softsign']
+output_activations= ['softmax', 'sigmoid']
+hidden_layers_number=[1,2,3,4]
 epochs= [10,20,30]
 batches= [10,20,30]
-param_grid= dict(optimizer=optimizers,epochs=epochs,batch_size=batches)
+param_grid= dict(optimizer=optimizers,epochs=epochs,batch_size=batches , activation= activations,
+                 output_activation=output_activations, hidden_layers=hidden_layers_number) # wprowadzam
 
 grid=GridSearchCV(estimator=model1,param_grid=param_grid)
 
@@ -137,7 +143,7 @@ grid_result=grid.fit(x_train1,y_train1)
 means= grid_result.cv_results_['mean_test_score']
 stds = grid_result.cv_results_['std_test_score']
 params = grid_result.cv_results_['params']
-for mean, stdev, param in zip(means, stds, params):
+for mean, stdev, param in zip(means, stds, params):  #zip  https://www.programiz.com/python-programming/methods/built-in/zip
 	print("%f (%f) with: %r" % (mean, stdev, param))
 
 
